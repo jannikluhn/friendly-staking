@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.2",
+    "dotenv": "^16.1.4",
+    "hardhat": "^2.15.0",
+    "hardhat-deploy": "^0.11.30"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.1"
+  }
+}
