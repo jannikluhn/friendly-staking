@@ -4,7 +4,7 @@
     healthy for yourself or your environment.
   </p>
   <p class="mt-6">
-    Home staking is like doing Yoga every morning at sunrise: Amazing if you can pull it off, but
+    Home staking is like doing yoga every morning at sunrise: Amazing if you can pull it off, but
     beyond the capabilities of mere mortals.
   </p>
   <p class="mt-6">
