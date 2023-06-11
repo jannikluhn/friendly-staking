@@ -1,10 +1,10 @@
 # Friendly Staking
 
-Staking in a traditional pool is like heroin: It feels quite pleasent, but it's not the most healthy for yourself or your environment.
+Home staking is super hard! You have to run a node on powerful hardware, monitor it constantly, make sure it stays up-to-date, and even if everything works fine, you end up worrying about it anyways. That's why most stakers trust in staking pools, like LIDO, Rocket Pool, or even fully centralized providers. However, their market dominance is a serious threat to Ethereum's security. It can also be seen as a serious capital misallocation, as 1ETH sent to LIDO results in much less marginal security compared to giving it to a home staker. Last but not least, they take high fees.
 
-Home staking is like doing yoga every morning at sunrise: Amazing if you can pull it off, but beyond the capabilities of mere mortals.
+Friendly Staking combines the best of home staking with the best of staking pools. It's based on the premise that while almost no one wants to run a node, almost everyone knows someone who does. Friendly Staking allows groups of friends to easily and safely pool money and automatically split the rewards. Through social pressure, the group still has political influence on the node, making friendly staked ETH more valuable to the network compared to traditional pools.
 
-With Friendly Staking, you can have the best of woth worlds: The ease of traditional staking pools, at yields only home staking could give you before, plus the good feeling of personally doing your part in securing the network. How? By banding together with your friends. Everyone provides a share of the stake, but only one has to run a physical node.
+![Screenshot](hackathon-submission/HomePage.png)
 
 ## Usage
 
