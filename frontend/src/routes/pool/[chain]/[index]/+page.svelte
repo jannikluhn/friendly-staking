@@ -6,7 +6,14 @@
 
   export let data;
 
-  $: $selectedChain = chains[data.chain];
+  $: {
+    $selectedChain = null;
+    for (const [key, value] of Object.entries(chains)) {
+      if (value.network === data.chain) {
+        $selectedChain = value;
+      }
+    }
+  }
   $: $poolIndex = parseInt(data.index);
 </script>
 

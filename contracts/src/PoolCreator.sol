@@ -116,7 +116,7 @@ contract PoolCreator {
         emit Deposited(poolIndex, friend);
     }
 
-    function finalizePool(uint256 poolIndex, bytes calldata pubkey, bytes calldata signature, bytes32 depositDataRoot) external payable {
+    function finalizePool(uint256 poolIndex, bytes calldata pubkey, bytes calldata signature, bytes32 depositDataRoot) external {
         if (poolIndex >= numPools) {
             revert InvalidPoolIndex();
         }

@@ -1,7 +1,7 @@
 <script>
   import { page } from "$app/stores";
   import { invalidate } from "$app/navigation";
-  import { formatEther } from "viem";
+  import { formatEther, encodeAbiParameters, concat } from "viem";
   import Button from "./Button.svelte";
   import Input from "./Input.svelte";
   import Address from "./Address.svelte";
@@ -20,6 +20,9 @@
     walletAccount,
     friendIndex,
     share,
+    isERC20,
+    tokenDeployment,
+    tokenSymbol,
   } from "./stores";
   import { computeWithdrawalCredentials } from "./utils";
 
@@ -38,6 +41,16 @@
   async function deposit() {
     waitingForDeposit = true;
     await $walletClient.switchChain({ id: $selectedChain.id });
+    waitingForDeposit = false;
+    if (!$isERC20) {
+      await depositNative();
+    } else {
+      await depositERC20();
+    }
+    await invalidate($page.path);
+  }
+
+  async function depositNative() {
     const { request } = await $publicClient.simulateContract({
       ...$poolCreatorDeployment,
       functionName: "deposit",
@@ -49,9 +62,30 @@
     const receipt = await $publicClient.waitForTransactionReceipt({
       hash: txHash,
     });
-    console.log(receipt);
-    waitingForDeposit = false;
-    await invalidate($page.path);
+    return receipt;
+  }
+
+  async function depositERC20() {
+    const args = encodeAbiParameters(
+      [
+        { name: "poolIndex", type: "uint256" },
+        { name: "friend", type: "uint256" },
+      ],
+      [$poolIndex, $friendIndex]
+    );
+    const callArgs = concat(["0x01", args]);
+
+    const { request } = await $publicClient.simulateContract({
+      ...$tokenDeployment,
+      functionName: "transferAndCall",
+      account: $walletAccount,
+      args: [$poolCreatorDeployment.address, $share, callArgs],
+    });
+    const txHash = await $walletClient.writeContract(request);
+    const receipt = await $publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+    return receipt;
   }
 
   async function finalize() {
@@ -88,13 +122,14 @@
     {#if !$deposited}
       <p>
         Your address is <Address address={$walletAccount} /> and you're a friend of this pool! Your share
-        is {formatEther($share)} ETH which you have not yet deposited. Click the button below to do so
-        now.
+        is {formatEther($share)}
+        {$tokenSymbol} which you have not yet deposited. Click the button below to do so now.
       </p>
     {:else}
       <p>
         Your address is <Address address={$walletAccount} /> and you're a friend of this pool! Your share
-        is {formatEther($share)} ETH which you have already deposited. You're good.
+        is {formatEther($share)}
+        {$tokenSymbol} which you have already deposited. You're good.
       </p>
     {/if}
     <div class="m-2">

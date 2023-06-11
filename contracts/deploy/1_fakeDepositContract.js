@@ -5,6 +5,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   await deploy("FakeDepositContract", {
     from: deployer,
     gasLimit: 4000000,
+    gasPrice: 10000000000,
     args: [],
   });
 };

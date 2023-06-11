@@ -1,25 +1,51 @@
 import { writable, derived } from "svelte/store";
-import { createPublicClient, createWalletClient, custom, isAddressEqual } from "viem";
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  isAddressEqual,
+  parseEther,
+  http,
+} from "viem";
 import * as chains from "viem/chains";
-import { poolCreatorDeployments } from "./deployments.js";
+import { rpcs } from "./rpcs.js";
+import { poolCreatorDeployments, isERC20Deployment, tokenDeployments } from "./deployments.js";
 
 export const windowStore = writable(null);
 
-export const selectedChain = writable(chains.mainnet);
+export const selectedChain = writable(chains.goerli);
 
 export const walletAccounts = writable([]);
 
 export const connectedChain = writable(null);
 
-export const publicClient = derived(
+export const publicTransport = derived(
   [selectedChain, windowStore],
   ([$selectedChain, $windowStore]) => {
-    if (!$windowStore) {
+    if (!$selectedChain) {
+      return null;
+    }
+    if (rpcs[$selectedChain.id]) {
+      return http(rpcs[$selectedChain.id]);
+    } else {
+      if (!$windowStore) {
+        return null;
+      } else {
+        return custom($windowStore.ethereum);
+      }
+    }
+  }
+);
+
+export const publicClient = derived(
+  [selectedChain, publicTransport],
+  ([$selectedChain, $publicTransport]) => {
+    if (!$selectedChain || !$publicTransport) {
       return null;
     }
     return createPublicClient({
       chain: $selectedChain,
-      transport: custom($windowStore.ethereum),
+      transport: $publicTransport,
     });
   }
 );
@@ -74,6 +100,36 @@ export const poolCreatorDeployment = derived(selectedChain, ($selectedChain) => 
     return null;
   }
   return poolCreatorDeployments[$selectedChain.id] || null;
+});
+
+export const isERC20 = derived(selectedChain, ($selectedChain) => {
+  if (!$selectedChain) {
+    return null;
+  }
+  return isERC20Deployment[$selectedChain.id];
+});
+
+export const tokenDeployment = derived(selectedChain, ($selectedChain) => {
+  if (!$selectedChain) {
+    return null;
+  }
+  return tokenDeployments[$selectedChain.id] || null;
+});
+
+export const totalDepositAmount = derived(isERC20, ($isERC20) => {
+  if ($isERC20) {
+    return parseEther("1");
+  } else {
+    return parseEther("32");
+  }
+});
+
+export const tokenSymbol = derived(isERC20, ($isERC20) => {
+  if ($isERC20) {
+    return "GNO";
+  } else {
+    return "ETH";
+  }
 });
 
 export const poolIndex = writable(null);

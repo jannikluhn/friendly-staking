@@ -25,7 +25,6 @@
     }
     if (friends[0].address === "") {
       friends[0].address = $walletAccount;
-      friends[0].share = "32";
     }
   }
 </script>

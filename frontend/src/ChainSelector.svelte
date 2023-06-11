@@ -2,7 +2,7 @@
   import { selectedChain } from "./stores.js";
   import * as chains from "viem/chains";
 
-  let supportedChains = [chains.hardhat, chains.mainnet, chains.goerli];
+  let supportedChains = [chains.hardhat, chains.goerli, chains.gnosisChiado];
   let selectedChainIndex = 0;
 
   $: $selectedChain = supportedChains[selectedChainIndex];

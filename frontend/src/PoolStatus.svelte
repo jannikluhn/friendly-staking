@@ -46,8 +46,12 @@
       Pool #{$poolIndex} is operational. The operator <Address address={$pool.friends[0]} /> should be
       running the staking node. Rewards are accrued at <Address address={$pool.rewardSplitter} />.
     </p>
-  {:else if $pool.numDeposits >= $pool.friends.length}
-    <p>Pool #{$poolIndex} is waiting to be finalized by the operator {$pool.friends[0]}.</p>
+  {:else if $pool.numDeposited >= $pool.friends.length}
+    <p>
+      Pool #{$poolIndex} is waiting to be finalized by the operator <Address
+        address={$pool.friends[0]}
+      />.
+    </p>
   {:else}
     <p>Pool #{$poolIndex} is waiting for the remaining deposits of its participants.</p>
   {/if}

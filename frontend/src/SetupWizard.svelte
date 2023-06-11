@@ -1,6 +1,14 @@
 <script>
   import { goto } from "$app/navigation";
-  import { parseEther, decodeEventLog, isAddressEqual, isAddress } from "viem";
+  import {
+    parseEther,
+    decodeEventLog,
+    isAddressEqual,
+    formatEther,
+    isAddress,
+    encodeAbiParameters,
+    concat,
+  } from "viem";
 
   import WalletConnectionButton from "./WalletConnectionButton.svelte";
   import ChainSelector from "./ChainSelector.svelte";
@@ -10,10 +18,14 @@
   import {
     requiresWalletConnection,
     poolCreatorDeployment,
+    tokenDeployment,
     publicClient,
     walletClient,
     walletAccount,
     selectedChain,
+    isERC20,
+    tokenSymbol,
+    totalDepositAmount,
   } from "./stores.js";
 
   let friends = [];
@@ -32,7 +44,7 @@
   $: shareSum = invalidShare
     ? null
     : friends.map((f) => parseEther(f.share)).reduce((a, b) => a + b, 0n);
-  $: invalidShareSum = !invalidShare && shareSum != parseEther("32");
+  $: invalidShareSum = !invalidShare && shareSum != $totalDepositAmount;
   $: notEnoughParticipants = friends.length <= 1;
   $: duplicateAddresses = new Set(friends.map((f) => f.address)).size !== friends.length;
   $: firstAddressNotWallet =
@@ -57,6 +69,20 @@
     const addresses = friends.map((f) => f.address);
     const shares = friends.map((f) => parseEther(f.share));
     await $walletClient.switchChain({ id: $selectedChain.id });
+
+    let ev;
+    if (!$isERC20) {
+      ev = await setupNative(addresses, shares);
+    } else {
+      ev = await setupERC20(addresses, shares);
+    }
+    console.log("setup successful", ev);
+
+    waiting = false;
+    goto(`/pool/${$selectedChain.network}/${ev.args.index.toString()}`);
+  }
+
+  async function setupNative(addresses, shares) {
     const { request } = await $publicClient.simulateContract({
       ...$poolCreatorDeployment,
       functionName: "setupPool",
@@ -74,18 +100,44 @@
       data: log.data,
       topics: log.topics,
     });
+    return ev;
+  }
 
-    console.log("pool created successfully, index", ev.args.index);
-    waiting = false;
-    goto(`/pool/${$selectedChain.name.toLowerCase()}/${ev.args.index.toString()}`);
+  async function setupERC20(addresses, shares) {
+    const args = encodeAbiParameters(
+      [
+        { name: "addresses", type: "address[]" },
+        { name: "amounts", type: "uint256[]" },
+      ],
+      [addresses, shares]
+    );
+    const callArgs = concat(["0x00", args]);
+
+    const { request } = await $publicClient.simulateContract({
+      ...$tokenDeployment,
+      functionName: "transferAndCall",
+      account: $walletAccount,
+      args: [$poolCreatorDeployment.address, shares[0], callArgs],
+    });
+    const txHash = await $walletClient.writeContract(request);
+    const receipt = await $publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+    const log = receipt.logs[receipt.logs.length - 1];
+    const ev = decodeEventLog({
+      abi: $poolCreatorDeployment.abi,
+      data: log.data,
+      topics: log.topics,
+    });
+    return ev;
   }
 </script>
 
 <p class="mb-4">
-  This step will setup a new pool and define which addresses participate and which share each of
-  them has. It will also automatically deploy a contract that will later split the rewards. Note
-  that the friend who carries out this step will later be responsible to run the physical staking
-  node.
+  This step will setup a new pool. First, define which addresses participate and how much stake each
+  of you has to submit. This data is sent to the blockchain which will automatically deploy a
+  contract for you to later split the rewards. Note that the friend who carries out this step will
+  later be responsible to run the physical staking node.
 </p>
 
 <div>
@@ -105,9 +157,14 @@
     {:else if invalidAddress}
       <p>At least one address is invalid. Please correct it to continue.</p>
     {:else if invalidShare}
-      <p>At least one share is invalid. Please make sure they are valid positive ETH values.</p>
+      <p>At least one share is invalid. Please make sure they are valid positive values.</p>
     {:else if invalidShareSum}
-      <p>The shares do not sum to the correct value. Please make sure they are 32 ETH in total.</p>
+      <p>
+        The shares do not sum to the correct value. Please make sure they are {formatEther(
+          $totalDepositAmount
+        )}
+        {$tokenSymbol} in total.
+      </p>
     {:else if notEnoughParticipants}
       <p>There are not enough participants. Make sure there are at least two.</p>
     {:else if duplicateAddresses}
